@@ -1,6 +1,7 @@
 import { useState } from "react";
-import NavBar from "./NavBar";
-import Main from "./Main.js";
+import { NavBar, SearchBar, NumResults } from "./NavBar";
+import { Box, MovieList, WatchedList, WatchedSummary } from "./Box";
+import { StarRating } from "./StarRating";
 
 const tempMovieData = [
   {
@@ -54,15 +55,41 @@ export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
   const [watched, setWatched] = useState(tempWatchedData);
 
+  const [rating, setRating] = useState(0);
+
   return (
     <>
-      <NavBar query={query} setQuery={setQuery} movies={movies} />
-      <Main
-        movies={movies}
-        watched={watched}
-        setMovies={setMovies}
-        setWatched={setWatched}
-      />
+      <NavBar>
+        <SearchBar query={query} setQuery={setQuery} />
+        <NumResults movies={movies} />
+      </NavBar>
+      <Main>
+        <Box>
+          <MovieList movies={movies} />
+          <StarRating
+            maxRating={10}
+            rating={rating}
+            setRating={setRating}
+            fstColor="#F11A7B"
+            secColor="yellow"
+            size={24}
+            showRating={true}
+            messages={["Razzie", "Bad", "OK", "Good", "Oscar"]}
+          />
+          <div>
+            <p>The movie rating is {rating} stars</p>
+          </div>
+        </Box>
+
+        <Box>
+          <WatchedSummary watched={watched} />
+          <WatchedList watched={watched} />
+        </Box>
+      </Main>
     </>
   );
 }
+
+const Main = ({ children }) => {
+  return <main className="main">{children}</main>;
+};

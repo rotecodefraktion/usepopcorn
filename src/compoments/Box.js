@@ -1,71 +1,64 @@
 import React, { useState } from "react";
 import Button from "./Button";
 import Movie from "./Movie";
-
-const Box = ({ movies, avgImdbRating, avgUserRating, avgRuntime }) => {
+export const Box = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
-  console.log(typeof avgImdbRating);
   return (
     <div className="box">
       <Button onClick={setIsOpen} isOpen={isOpen} />
-      {isOpen && (
-        <>
-          {avgImdbRating !== undefined && (
-            <WatchedSummary
-              watched={movies}
-              avgImdbRating={avgImdbRating}
-              avgUserRating={avgUserRating}
-              avgRuntime={avgRuntime}
-            />
-          )}
-          <ul className="list">
-            {movies?.map((movie) => (
-              <Movie movie={movie} key={movie.imdbID}>
-                {movie.runtime === undefined ? (
-                  <MovieListChildren movie={movie} />
-                ) : (
-                  <WatchedListChildren movie={movie} />
-                )}
-              </Movie>
-            ))}
-          </ul>
-        </>
-      )}
+      {isOpen && children}
     </div>
   );
 };
 
-const MovieListChildren = ({ movie }) => {
+export const MovieList = ({ movies }) => {
   return (
-    <div>
-      <p>
-        <span>🗓</span>
-        <span>{movie.Year}</span>
-      </p>
-    </div>
+    <ul className="list">
+      {movies.map((movie) => (
+        <Movie movie={movie} key={movie.imdbID}>
+          <div>
+            <p>
+              <span>🗓</span>
+              <span>{movie.Year}</span>
+            </p>
+          </div>
+        </Movie>
+      ))}
+    </ul>
   );
 };
 
-const WatchedListChildren = ({ movie }) => {
+export const WatchedList = ({ watched }) => {
   return (
-    <div>
-      <p>
-        <span>⭐️</span>
-        <span>{movie.imdbRating}</span>
-      </p>
-      <p>
-        <span>🌟</span>
-        <span>{movie.userRating}</span>
-      </p>
-      <p>
-        <span>⏳</span>
-        <span>{movie.runtime} min</span>
-      </p>
-    </div>
+    <ul className="list">
+      {watched.map((movie) => (
+        <Movie movie={movie} key={movie.imdbID}>
+          <div>
+            <p>
+              <Star>{movie.imdbRating}</Star>
+            </p>
+            <p>
+              <Star>{movie.userRating}</Star>
+            </p>
+            <p>
+              <span>⏳</span>
+              <span>{movie.runtime} min</span>
+            </p>
+          </div>
+        </Movie>
+      ))}
+    </ul>
   );
 };
 
-function WatchedSummary({ watched, avgImdbRating, avgUserRating, avgRuntime }) {
+export const WatchedSummary = ({ watched }) => {
+  const average = (arr) =>
+    arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
+
+  const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
+  const avgUserRating = average(watched.map((movie) => movie.userRating));
+  const avgRuntime = average(watched.map((movie) => movie.runtime));
+
   return (
     <div className="summary">
       <h2>Movies you watched</h2>
@@ -75,12 +68,10 @@ function WatchedSummary({ watched, avgImdbRating, avgUserRating, avgRuntime }) {
           <span>{watched.length} movies</span>
         </p>
         <p>
-          <span>⭐️</span>
-          <span>{avgImdbRating.toFixed(2)}</span>
+          <Star>{avgImdbRating.toFixed(2)}</Star>
         </p>
         <p>
-          <span>🌟</span>
-          <span>{avgUserRating.toFixed(2)}</span>
+          <Star>{avgUserRating.toFixed(2)}</Star>
         </p>
         <p>
           <span>⏳</span>
@@ -89,6 +80,13 @@ function WatchedSummary({ watched, avgImdbRating, avgUserRating, avgRuntime }) {
       </div>
     </div>
   );
-}
+};
 
-export default Box;
+export const Star = ({ children }) => {
+  return (
+    <>
+      {Number(children) >= 9 ? <div>🌟</div> : <div>⭐️</div>}
+      <span>{children}</span>
+    </>
+  );
+};
