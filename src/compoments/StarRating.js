@@ -28,8 +28,8 @@ export const StarRating = ({
 
   const textStyle = {
     fontHeight: "1",
-    margin: "0",
-    color: { fstColor },
+    margin: "0px",
+    color: `${fstColor}`,
     fontSize: `${size / 1.5}px`,
   };
   const starStyle = {
@@ -62,9 +62,6 @@ export const StarRating = ({
         <p style={textStyle}>
           {messages.length === maxRating && messages[hoverRating - 1]}
           {messages.length !== maxRating && (hoverRating || rating || "")}
-          {/*   {messages.length === maxRating
-            ? messages[hoverRating - 1]
-            : hoverRating || rating || "" } */}
         </p>
       )}
     </div>

@@ -1,94 +1,122 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavBar, SearchBar, NumResults } from "./NavBar";
-import { Box, MovieList, WatchedList, WatchedSummary } from "./Box";
-import { StarRating } from "./StarRating";
-
-const tempMovieData = [
-  {
-    imdbID: "tt1375666",
-    Title: "Inception",
-    Year: "2010",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-  },
-  {
-    imdbID: "tt0133093",
-    Title: "The Matrix",
-    Year: "1999",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
-  },
-  {
-    imdbID: "tt6751668",
-    Title: "Parasite",
-    Year: "2019",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg",
-  },
-];
-
-const tempWatchedData = [
-  {
-    imdbID: "tt1375666",
-    Title: "Inception",
-    Year: "2010",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-    runtime: 148,
-    imdbRating: 8.8,
-    userRating: 10,
-  },
-  {
-    imdbID: "tt0088763",
-    Title: "Back to the Future",
-    Year: "1985",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
-    runtime: 116,
-    imdbRating: 8.5,
-    userRating: 9,
-  },
-];
+import {
+  Box,
+  MovieList,
+  WatchedList,
+  WatchedSummary,
+  MovieDetails,
+} from "./Box";
+import { fetchMovies, fetchMovieDetails } from "./Helper";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState(tempMovieData);
-  const [watched, setWatched] = useState(tempWatchedData);
-
+  const [movies, setMovies] = useState([]);
+  const [selectedId, setSelectedId] = useState();
+  const [selectedMovie, setSelectedMovie] = useState();
+  const [watched, setWatched] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState();
   const [rating, setRating] = useState(0);
+
+  const handleSelectedMovie = (id) => {
+    console.log("handleSelectedMovie: ", id);
+    setSelectedId(() => id);
+  };
+
+  const handleAddWatched = () => {
+    const runtime = parseInt(selectedMovie.Runtime);
+    const newMovie = { ...selectedMovie, runtime: runtime, userRating: rating };
+    setWatched(() => [...watched, newMovie]);
+    setSelectedId(() => null);
+  };
+
+  const handleDeleteWatched = (id) => {
+    const newWatched = watched.filter((movie) => movie.imdbID !== id);
+    setWatched(() => newWatched);
+    setSelectedId(() => null);
+  };
+
+  const handleSearchChange = (e) => {
+    setQuery(() => e.target.value);
+    //searchValue = e.target.value;
+    console.log("handleSearchChange: ", query);
+  };
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setMovies(() => []);
+        setIsLoading(() => true);
+        setError(() => null);
+        const fetchedMovies = await fetchMovies(query);
+        setMovies(() => fetchedMovies);
+      } catch (err) {
+        setError(() => err.message);
+      } finally {
+        setIsLoading(() => false);
+      }
+    }
+    fetchData(); //await fetchMovies(searchValue);
+  }, [query]);
+
+  useEffect(() => {
+    async function fetchData1() {
+      try {
+        const movie = await fetchMovieDetails(selectedId);
+        setSelectedMovie(() => movie);
+      } catch (err) {
+        setError(() => err.message);
+      }
+    }
+    fetchData1();
+  }, [selectedId]);
 
   return (
     <>
       <NavBar>
-        <SearchBar query={query} setQuery={setQuery} />
+        <SearchBar query={query} onChangeQuery={handleSearchChange} />
         <NumResults movies={movies} />
       </NavBar>
       <Main>
         <Box>
-          <MovieList movies={movies} />
-          <StarRating
-            maxRating={10}
-            rating={rating}
-            setRating={setRating}
-            fstColor="#F11A7B"
-            secColor="yellow"
-            size={24}
-            showRating={true}
-            messages={["Razzie", "Bad", "OK", "Good", "Oscar"]}
-          />
-          <div>
-            <p>The movie rating is {rating} stars</p>
-          </div>
+          {isLoading && <Loader />}
+          {!isLoading && (
+            <MovieList movies={movies} onSelectMovie={handleSelectedMovie} />
+          )}
+          {error && <ErrorMessage>❌ {error}</ErrorMessage>}
         </Box>
 
         <Box>
-          <WatchedSummary watched={watched} />
-          <WatchedList watched={watched} />
+          {selectedId && (
+            <MovieDetails
+              selectedMovie={selectedMovie}
+              setSelectedId={setSelectedId}
+              rating={rating}
+              setRating={setRating}
+              onAddList={handleAddWatched}
+              watched={watched}
+            />
+          )}
+          {!selectedId && (
+            <>
+              <WatchedSummary watched={watched} />
+              <WatchedList watched={watched} onDelete={handleDeleteWatched} />
+            </>
+          )}
         </Box>
       </Main>
     </>
   );
 }
+
+const Loader = () => {
+  return <p className="loader">Loading...</p>;
+};
+
+const ErrorMessage = ({ children }) => {
+  return <p className="error">{children}</p>;
+};
 
 const Main = ({ children }) => {
   return <main className="main">{children}</main>;

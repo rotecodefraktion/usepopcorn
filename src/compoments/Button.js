@@ -1,7 +1,6 @@
 import React from "react";
 
 const Button = ({ isOpen, onClick }) => {
-  console.log(isOpen);
   return (
     <button
       className="btn-toggle"

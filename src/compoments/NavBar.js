@@ -1,4 +1,4 @@
-import React from "react";
+import { React, useState } from "react";
 
 export const NavBar = ({ children }) => {
   return (
@@ -9,14 +9,15 @@ export const NavBar = ({ children }) => {
   );
 };
 
-export const SearchBar = ({ query, setQuery }) => {
+export const SearchBar = ({ query, onChangeQuery }) => {
   return (
     <input
       className="search"
       type="text"
+      name="search"
       placeholder="Search movies..."
       value={query}
-      onChange={(e) => setQuery(e.target.value)}
+      onChange={(e) => onChangeQuery(e)}
     />
   );
 };

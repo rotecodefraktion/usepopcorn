@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Button from "./Button";
 import Movie from "./Movie";
+import { StarRating } from "./StarRating";
+
 export const Box = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
   return (
@@ -11,11 +13,11 @@ export const Box = ({ children }) => {
   );
 };
 
-export const MovieList = ({ movies }) => {
+export const MovieList = ({ movies, onSelectMovie }) => {
   return (
     <ul className="list">
       {movies.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID}>
+        <Movie movie={movie} key={movie.imdbID} onSelectMovie={onSelectMovie}>
           <div>
             <p>
               <span>🗓</span>
@@ -28,11 +30,11 @@ export const MovieList = ({ movies }) => {
   );
 };
 
-export const WatchedList = ({ watched }) => {
+export const WatchedList = ({ watched, onDelete }) => {
   return (
     <ul className="list">
       {watched.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID}>
+        <Movie movie={movie} key={movie.imdbID} onSelectMovie={() => {}}>
           <div>
             <p>
               <Star>{movie.imdbRating}</Star>
@@ -42,8 +44,14 @@ export const WatchedList = ({ watched }) => {
             </p>
             <p>
               <span>⏳</span>
-              <span>{movie.runtime} min</span>
+              <span>{movie.Runtime}</span>
             </p>
+            <button
+              className="btn-delete"
+              onClick={() => onDelete(movie.imdbID)}
+            >
+              X
+            </button>
           </div>
         </Movie>
       ))}
@@ -82,10 +90,110 @@ export const WatchedSummary = ({ watched }) => {
   );
 };
 
+export const MovieDetails = ({
+  selectedMovie,
+  setSelectedId,
+  rating,
+  setRating,
+  onAddList,
+  watched,
+}) => {
+  return (
+    <div className="details">
+      <SelectedMovieHeader
+        movie={selectedMovie}
+        setSelectedId={setSelectedId}
+      />
+      <SelectedMovieSection
+        movie={selectedMovie}
+        rating={rating}
+        setRating={setRating}
+        onAddList={onAddList}
+        watched={watched}
+      />
+    </div>
+  );
+};
+
+const SelectedMovieHeader = ({ movie, setSelectedId }) => {
+  console.log("Movie: ", movie);
+  if (movie === undefined) return <></>;
+
+  console.log("Movie: ", movie);
+
+  return (
+    <>
+      <button className="btn-back" onClick={() => setSelectedId(() => null)}>
+        🔙
+      </button>
+      <header>
+        <img
+          className="details"
+          src={movie.Poster}
+          alt={`${movie.Title} poster`}
+        />
+        <div className="details-overview">
+          <h2>{movie.Title}</h2>
+          <p>
+            {movie.Released} • {movie.Runtime}
+          </p>
+          <p> {movie.Genre}</p>
+          {movie.imdbRating && <p>⭐️ {movie.imdbRating} IMdb rating</p>}
+        </div>
+      </header>
+    </>
+  );
+};
+
+const SelectedMovieSection = ({
+  movie,
+  rating,
+  setRating,
+  onAddList,
+  watched,
+}) => {
+  if (movie === undefined) return <></>;
+
+  const watchedIndex = watched.findIndex((wm) => wm.imdbID === movie.imdbID);
+
+  return (
+    <section>
+      <div className="rating">
+        <StarRating
+          maxRating={10}
+          rating={rating}
+          setRating={setRating}
+          fstColor="#F11A7B"
+          secColor="#F11A7B"
+          size={24}
+          showRating={true}
+          messages={["Razzie", "Bad", "OK", "Good", "Oscar"]}
+          key={movie.imdbID}
+        />
+        {watchedIndex >= 0 && (
+          <p>
+            {`You already rated this movie with ${watched[watchedIndex].userRating} 🌟 `}
+          </p>
+        )}
+        {watchedIndex < 0 && (
+          <button className="btn-add" onClick={onAddList}>
+            + Add to list
+          </button>
+        )}
+      </div>
+      <p>
+        <em>{movie.Plot}</em>
+      </p>
+      <p>{movie.Actors}</p>
+      <p>Directed by {movie.Director}</p>
+    </section>
+  );
+};
+
 export const Star = ({ children }) => {
   return (
     <>
-      {Number(children) >= 9 ? <div>🌟</div> : <div>⭐️</div>}
+      {Number(children) >= 9 ? <span>🌟</span> : <span>⭐️</span>}
       <span>{children}</span>
     </>
   );
