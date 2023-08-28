@@ -24,20 +24,21 @@ export default function App() {
   };
 
   const handleAddWatched = (movie, rating) => {
-    const runtime = parseInt(selectedMovie.Runtime);
-    const newMovie = { ...selectedMovie, runtime: runtime, userRating: rating };
+    const runtime = parseInt(movie.Runtime);
+    const newMovie = { ...movie, runtime: runtime, userRating: rating };
     setWatched(() => [...watched, newMovie]);
     setSelectedId(() => null);
   };
 
   const handleChangeRatingWatched = (movie, rating) => {
     const changedMovies = watched.map((movie) => {
-      if (movie.imdbID === selectedMovie.imdbID) {
+      if (movie.imdbID === selectedId) {
         return { ...movie, userRating: rating };
       } else {
         return movie;
       }
     });
+
     console.log("changeRatingWatched: ", changedMovies);
     setWatched(() => changedMovies);
     setSelectedId(() => null);
@@ -70,18 +71,6 @@ export default function App() {
     fetchData(); //await fetchMovies(searchValue);
   }, [query]);
 
-  useEffect(() => {
-    async function fetchDetailData() {
-      try {
-        const movie = await fetchMovieDetails(selectedId);
-        setSelectedMovie(() => movie);
-      } catch (err) {
-        setError(() => err.message);
-      }
-    }
-    fetchDetailData();
-  }, [selectedId]);
-
   return (
     <>
       <NavBar>
@@ -100,7 +89,8 @@ export default function App() {
         <Box>
           {selectedId && (
             <MovieDetails
-              selectedMovie={selectedMovie}
+              //selectedMovie={selectedMovie}
+              selectedId={selectedId}
               setSelectedId={setSelectedId}
               onAddList={handleAddWatched}
               onChangeRating={handleChangeRatingWatched}

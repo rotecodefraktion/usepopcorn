@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Button from "./Button";
 import Movie from "./Movie";
 import { StarRating } from "./StarRating";
+import { fetchMovieDetails } from "./Helper";
 
 export const Box = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -31,6 +32,11 @@ export const MovieList = ({ movies, onSelectMovie }) => {
 };
 
 export const WatchedList = ({ watched, onDelete, onSelectMovie }) => {
+  const deleteMovie = (e, id) => {
+    e.stopPropagation();
+    onDelete(id);
+  };
+
   return (
     <ul className="list">
       {watched.map((movie) => (
@@ -48,7 +54,7 @@ export const WatchedList = ({ watched, onDelete, onSelectMovie }) => {
             </p>
             <button
               className="btn-delete"
-              onClick={() => onDelete(movie.imdbID)}
+              onClick={(el) => deleteMovie(el, movie.imdbID)}
             >
               X
             </button>
@@ -96,24 +102,59 @@ export const WatchedSummary = ({ watched }) => {
 };
 
 export const MovieDetails = ({
-  selectedMovie,
+  selectedId,
   setSelectedId,
   onAddList,
   onChangeRating,
   watched,
 }) => {
+  const [error, setError] = useState();
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState();
+
+  useEffect(() => {
+    async function fetchDetailData() {
+      console.log("useeffect Box: ", selectedId);
+      try {
+        setError(() => null);
+        setIsLoading(() => true);
+        const movie = await fetchMovieDetails(selectedId);
+        setSelectedMovie(() => movie);
+        //selectedMovie = movie;
+      } catch (err) {
+        setError(() => err.message);
+      } finally {
+        setIsLoading(() => false);
+      }
+    }
+    fetchDetailData();
+  }, [selectedId]);
+
+  if (error) {
+    return (
+      <div className="details">
+        <p>{error}</p>;
+      </div>
+    );
+  }
+
   return (
     <div className="details">
-      <SelectedMovieHeader
-        movie={selectedMovie}
-        setSelectedId={setSelectedId}
-      />
-      <SelectedMovieSection
-        movie={selectedMovie}
-        onAddList={onAddList}
-        onChangeRating={onChangeRating}
-        watched={watched}
-      />
+      {isLoading && <p>Loading...</p>}
+      {!isLoading && (
+        <>
+          <SelectedMovieHeader
+            movie={selectedMovie}
+            setSelectedId={setSelectedId}
+          />
+          <SelectedMovieSection
+            movie={selectedMovie}
+            onAddList={onAddList}
+            onChangeRating={onChangeRating}
+            watched={watched}
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -171,8 +212,6 @@ const SelectedMovieSection = ({
   const handleRating = (e) => {
     onChangeRating(movie, rating);
   };
-
-  console.log("181: rating: ", watched[watchedIndex]?.userRating);
 
   return (
     <section>
