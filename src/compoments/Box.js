@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Button from "./Button";
 import Movie from "./Movie";
 import { StarRating } from "./StarRating";
@@ -30,11 +30,11 @@ export const MovieList = ({ movies, onSelectMovie }) => {
   );
 };
 
-export const WatchedList = ({ watched, onDelete }) => {
+export const WatchedList = ({ watched, onDelete, onSelectMovie }) => {
   return (
     <ul className="list">
       {watched.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID} onSelectMovie={() => {}}>
+        <Movie movie={movie} key={movie.imdbID} onSelectMovie={onSelectMovie}>
           <div>
             <p>
               <Star>{movie.imdbRating}</Star>
@@ -63,9 +63,14 @@ export const WatchedSummary = ({ watched }) => {
   const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
+  console.log("watched: ", watched);
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
+
+  console.log("avgImdbRating: ", avgImdbRating);
+  console.log("avgUserRating: ", avgUserRating);
+  console.log("avgRuntime: ", avgRuntime);
 
   return (
     <div className="summary">
@@ -93,9 +98,8 @@ export const WatchedSummary = ({ watched }) => {
 export const MovieDetails = ({
   selectedMovie,
   setSelectedId,
-  rating,
-  setRating,
   onAddList,
+  onChangeRating,
   watched,
 }) => {
   return (
@@ -106,9 +110,8 @@ export const MovieDetails = ({
       />
       <SelectedMovieSection
         movie={selectedMovie}
-        rating={rating}
-        setRating={setRating}
         onAddList={onAddList}
+        onChangeRating={onChangeRating}
         watched={watched}
       />
     </div>
@@ -147,21 +150,36 @@ const SelectedMovieHeader = ({ movie, setSelectedId }) => {
 
 const SelectedMovieSection = ({
   movie,
-  rating,
-  setRating,
   onAddList,
+  onChangeRating,
   watched,
 }) => {
+  const watchedIndex = watched.findIndex((wm) => wm.imdbID === movie?.imdbID);
+  const [rating, setRating] = useState(
+    watchedIndex >= 0 ? watched[watchedIndex].userRating : 3
+  );
+  console.log("watchedIndex: ", watchedIndex);
+
   if (movie === undefined) return <></>;
 
-  const watchedIndex = watched.findIndex((wm) => wm.imdbID === movie.imdbID);
+  const handleAddList = () => {
+    console.log("rating: ", rating);
+    if (rating === 0) setRating(() => 3);
+    onAddList(movie, rating);
+  };
+
+  const handleRating = (e) => {
+    onChangeRating(movie, rating);
+  };
+
+  console.log("181: rating: ", watched[watchedIndex]?.userRating);
 
   return (
     <section>
       <div className="rating">
         <StarRating
           maxRating={10}
-          rating={rating}
+          rating={watched[watchedIndex]?.userRating}
           setRating={setRating}
           fstColor="#F11A7B"
           secColor="#F11A7B"
@@ -171,12 +189,17 @@ const SelectedMovieSection = ({
           key={movie.imdbID}
         />
         {watchedIndex >= 0 && (
-          <p>
-            {`You already rated this movie with ${watched[watchedIndex].userRating} 🌟 `}
-          </p>
+          <>
+            <p>
+              {`You already rated this movie with ${watched[watchedIndex].userRating} 🌟 `}
+            </p>
+            <button className="btn-add" onClick={(e) => handleRating(e)}>
+              Change rating
+            </button>
+          </>
         )}
         {watchedIndex < 0 && (
-          <button className="btn-add" onClick={onAddList}>
+          <button className="btn-add" onClick={handleAddList}>
             + Add to list
           </button>
         )}
@@ -193,8 +216,10 @@ const SelectedMovieSection = ({
 export const Star = ({ children }) => {
   return (
     <>
-      {Number(children) >= 9 ? <span>🌟</span> : <span>⭐️</span>}
+      {Number(children) >= 8 ? <span>🌟</span> : <span>⭐️</span>}
       <span>{children}</span>
     </>
   );
 };
+
+export default Box;

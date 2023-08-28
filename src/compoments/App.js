@@ -17,17 +17,29 @@ export default function App() {
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState();
-  const [rating, setRating] = useState(0);
 
   const handleSelectedMovie = (id) => {
     console.log("handleSelectedMovie: ", id);
     setSelectedId(() => id);
   };
 
-  const handleAddWatched = () => {
+  const handleAddWatched = (movie, rating) => {
     const runtime = parseInt(selectedMovie.Runtime);
     const newMovie = { ...selectedMovie, runtime: runtime, userRating: rating };
     setWatched(() => [...watched, newMovie]);
+    setSelectedId(() => null);
+  };
+
+  const handleChangeRatingWatched = (movie, rating) => {
+    const changedMovies = watched.map((movie) => {
+      if (movie.imdbID === selectedMovie.imdbID) {
+        return { ...movie, userRating: rating };
+      } else {
+        return movie;
+      }
+    });
+    console.log("changeRatingWatched: ", changedMovies);
+    setWatched(() => changedMovies);
     setSelectedId(() => null);
   };
 
@@ -39,8 +51,6 @@ export default function App() {
 
   const handleSearchChange = (e) => {
     setQuery(() => e.target.value);
-    //searchValue = e.target.value;
-    console.log("handleSearchChange: ", query);
   };
 
   useEffect(() => {
@@ -61,7 +71,7 @@ export default function App() {
   }, [query]);
 
   useEffect(() => {
-    async function fetchData1() {
+    async function fetchDetailData() {
       try {
         const movie = await fetchMovieDetails(selectedId);
         setSelectedMovie(() => movie);
@@ -69,7 +79,7 @@ export default function App() {
         setError(() => err.message);
       }
     }
-    fetchData1();
+    fetchDetailData();
   }, [selectedId]);
 
   return (
@@ -92,16 +102,19 @@ export default function App() {
             <MovieDetails
               selectedMovie={selectedMovie}
               setSelectedId={setSelectedId}
-              rating={rating}
-              setRating={setRating}
               onAddList={handleAddWatched}
+              onChangeRating={handleChangeRatingWatched}
               watched={watched}
             />
           )}
           {!selectedId && (
             <>
               <WatchedSummary watched={watched} />
-              <WatchedList watched={watched} onDelete={handleDeleteWatched} />
+              <WatchedList
+                watched={watched}
+                onDelete={handleDeleteWatched}
+                onSelectMovie={handleSelectedMovie}
+              />
             </>
           )}
         </Box>
