@@ -119,7 +119,7 @@ export const MovieDetails = ({
     return function () {
       document.removeEventListener("keydown", callback);
     };
-  }, [selectedId]);
+  }, [selectedId, setSelectedId]);
 
   useEffect(() => {
     async function fetchDetailData() {
