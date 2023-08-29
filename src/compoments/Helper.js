@@ -1,10 +1,12 @@
 const APIKey = "510c7fd6";
 
-async function fetchData(request) {
+async function fetchData(request, controller) {
   try {
-    const response = await fetch(request).catch(() => {
-      throw new Error("Network down, unable to fetch data");
-    });
+    const response = await fetch(request, { signal: controller?.signal }).catch(
+      () => {
+        throw new Error("Network down, unable to fetch data");
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Error during fetching data from API");
@@ -28,7 +30,7 @@ export const fetchMovieDetails = async (id) => {
   if (!id) return;
 
   const requestUrl = `http://www.omdbapi.com/?i=${id}&apikey=${APIKey}`;
-  console.log("requestUrl: ", requestUrl);
+
   try {
     const movie = await fetchData(requestUrl);
     return movie;
@@ -37,23 +39,22 @@ export const fetchMovieDetails = async (id) => {
   }
 };
 
-export const fetchMovies = async (query) => {
+export const fetchMovies = async (query, controller) => {
   try {
     if (query === "") {
       return [];
     }
     if (query === undefined || query.length < 3) {
-      console.log("Query must be at least 3 characters long");
       throw new Error("Query must be at least 3 characters long");
     }
 
     const requestUrl = `http://www.omdbapi.com/?s=${query}&apikey=${APIKey}`;
-    console.log("requestUrl: ", requestUrl);
-    const data = await fetchData(requestUrl);
+
+    const data = await fetchData(requestUrl, controller);
     if (!data.Search) {
       throw new Error("No movies found");
     }
-    console.log("data.Search: ", data.Search);
+
     return data.Search || [];
   } catch (err) {
     throw new Error(err.message);

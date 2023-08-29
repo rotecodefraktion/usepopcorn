@@ -60,8 +60,6 @@ export const StarRating = ({
       </div>
       {showRating && (
         <p style={textStyle}>
-          {console.log("hoverrating: ", hoverRating)}
-          {console.log("rating: ", rating)}
           {messages.length === maxRating && messages[hoverRating - 1]}
           {messages.length !== maxRating && (hoverRating || rating || "")}
         </p>

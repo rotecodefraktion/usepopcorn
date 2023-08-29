@@ -69,14 +69,9 @@ export const WatchedSummary = ({ watched }) => {
   const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-  console.log("watched: ", watched);
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
-
-  console.log("avgImdbRating: ", avgImdbRating);
-  console.log("avgUserRating: ", avgUserRating);
-  console.log("avgRuntime: ", avgRuntime);
 
   return (
     <div className="summary">
@@ -113,8 +108,21 @@ export const MovieDetails = ({
   const [selectedMovie, setSelectedMovie] = useState();
 
   useEffect(() => {
+    function callback(event) {
+      if (event.key === "Escape") {
+        setSelectedId(() => null);
+      }
+    }
+
+    document.addEventListener("keydown", callback);
+
+    return function () {
+      document.removeEventListener("keydown", callback);
+    };
+  }, [selectedId]);
+
+  useEffect(() => {
     async function fetchDetailData() {
-      console.log("useeffect Box: ", selectedId);
       try {
         setError(() => null);
         setIsLoading(() => true);
@@ -130,17 +138,28 @@ export const MovieDetails = ({
     fetchDetailData();
   }, [selectedId]);
 
+  useEffect(() => {
+    if (!selectedMovie?.Title) return;
+    document.title = `Movie | ${selectedMovie.Title}`;
+
+    return function () {
+      document.title = "usePopcorn";
+    };
+  }, [selectedMovie]);
+
   if (error) {
     return (
       <div className="details">
-        <p>{error}</p>;
+        <ErrorMessage>
+          <p>{error}</p>
+        </ErrorMessage>
       </div>
     );
   }
 
   return (
     <div className="details">
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <Loader />}
       {!isLoading && (
         <>
           <SelectedMovieHeader
@@ -160,10 +179,7 @@ export const MovieDetails = ({
 };
 
 const SelectedMovieHeader = ({ movie, setSelectedId }) => {
-  console.log("Movie: ", movie);
   if (movie === undefined) return <></>;
-
-  console.log("Movie: ", movie);
 
   return (
     <>
@@ -199,19 +215,8 @@ const SelectedMovieSection = ({
   const [rating, setRating] = useState(
     watchedIndex >= 0 ? watched[watchedIndex].userRating : 3
   );
-  console.log("watchedIndex: ", watchedIndex);
 
   if (movie === undefined) return <></>;
-
-  const handleAddList = () => {
-    console.log("rating: ", rating);
-    if (rating === 0) setRating(() => 3);
-    onAddList(movie, rating);
-  };
-
-  const handleRating = (e) => {
-    onChangeRating(movie, rating);
-  };
 
   return (
     <section>
@@ -232,13 +237,16 @@ const SelectedMovieSection = ({
             <p>
               {`You already rated this movie with ${watched[watchedIndex].userRating} 🌟 `}
             </p>
-            <button className="btn-add" onClick={(e) => handleRating(e)}>
+            <button
+              className="btn-add"
+              onClick={() => onChangeRating(movie, rating)}
+            >
               Change rating
             </button>
           </>
         )}
         {watchedIndex < 0 && (
-          <button className="btn-add" onClick={handleAddList}>
+          <button className="btn-add" onClick={() => onAddList(movie, rating)}>
             + Add to list
           </button>
         )}
@@ -259,6 +267,14 @@ export const Star = ({ children }) => {
       <span>{children}</span>
     </>
   );
+};
+
+const Loader = () => {
+  return <p className="loader">Loading...</p>;
+};
+
+const ErrorMessage = ({ children }) => {
+  return <p className="error">{children}</p>;
 };
 
 export default Box;

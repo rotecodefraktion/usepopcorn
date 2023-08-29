@@ -7,7 +7,7 @@ import {
   WatchedSummary,
   MovieDetails,
 } from "./Box";
-import { fetchMovies, fetchMovieDetails } from "./Helper";
+import { fetchMovies } from "./Helper";
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -19,7 +19,6 @@ export default function App() {
   const [error, setError] = useState();
 
   const handleSelectedMovie = (id) => {
-    console.log("handleSelectedMovie: ", id);
     setSelectedId(() => id);
   };
 
@@ -39,7 +38,6 @@ export default function App() {
       }
     });
 
-    console.log("changeRatingWatched: ", changedMovies);
     setWatched(() => changedMovies);
     setSelectedId(() => null);
   };
@@ -55,12 +53,13 @@ export default function App() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchData() {
       try {
         setMovies(() => []);
         setIsLoading(() => true);
         setError(() => null);
-        const fetchedMovies = await fetchMovies(query);
+        const fetchedMovies = await fetchMovies(query, controller);
         setMovies(() => fetchedMovies);
       } catch (err) {
         setError(() => err.message);
@@ -68,7 +67,11 @@ export default function App() {
         setIsLoading(() => false);
       }
     }
+    setSelectedId(() => null);
     fetchData(); //await fetchMovies(searchValue);
+    return function () {
+      controller.abort();
+    };
   }, [query]);
 
   return (
