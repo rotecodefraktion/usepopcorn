@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Button from "./Button";
 import Movie from "./Movie";
 import { StarRating } from "./StarRating";
-import { fetchMovieDetails } from "./Helper";
+import { useMoveDetails } from "./useMovies";
+import { useKey } from "./useKey";
 
 export const Box = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -15,6 +16,8 @@ export const Box = ({ children }) => {
 };
 
 export const MovieList = ({ movies, onSelectMovie }) => {
+  if (movies.length === 0) return <></>;
+
   return (
     <ul className="list">
       {movies.map((movie) => (
@@ -89,7 +92,7 @@ export const WatchedSummary = ({ watched }) => {
         </p>
         <p>
           <span>⏳</span>
-          <span>{avgRuntime} min</span>
+          <span>{avgRuntime.toFixed(0)} min</span>
         </p>
       </div>
     </div>
@@ -103,40 +106,9 @@ export const MovieDetails = ({
   onChangeRating,
   watched,
 }) => {
-  const [error, setError] = useState();
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState();
+  const { selectedMovie, isLoading, error } = useMoveDetails(selectedId);
 
-  useEffect(() => {
-    function callback(event) {
-      if (event.key === "Escape") {
-        setSelectedId(() => null);
-      }
-    }
-
-    document.addEventListener("keydown", callback);
-
-    return function () {
-      document.removeEventListener("keydown", callback);
-    };
-  }, [selectedId, setSelectedId]);
-
-  useEffect(() => {
-    async function fetchDetailData() {
-      try {
-        setError(() => null);
-        setIsLoading(() => true);
-        const movie = await fetchMovieDetails(selectedId);
-        setSelectedMovie(() => movie);
-        //selectedMovie = movie;
-      } catch (err) {
-        setError(() => err.message);
-      } finally {
-        setIsLoading(() => false);
-      }
-    }
-    fetchDetailData();
-  }, [selectedId]);
+  useKey("Escape", () => setSelectedId(() => null));
 
   useEffect(() => {
     if (!selectedMovie?.Title) return;
@@ -211,10 +183,21 @@ const SelectedMovieSection = ({
   onChangeRating,
   watched,
 }) => {
-  const watchedIndex = watched.findIndex((wm) => wm.imdbID === movie?.imdbID);
-  const [rating, setRating] = useState(
-    watchedIndex >= 0 ? watched[watchedIndex].userRating : 3
+  const [rating, setRating] = useState(null);
+
+  const ratingDescisionCount = useRef(0);
+  const watchedIndex = useRef(
+    watched.findIndex((wm) => wm.imdbID === movie?.imdbID)
   );
+
+  const handelRatingChange = (rating) => {
+    console.log("rating changed", rating);
+    setRating(() => rating);
+  };
+
+  useEffect(() => {
+    if (rating !== null) ratingDescisionCount.current += 1;
+  }, [rating]);
 
   if (movie === undefined) return <></>;
 
@@ -223,8 +206,8 @@ const SelectedMovieSection = ({
       <div className="rating">
         <StarRating
           maxRating={10}
-          rating={watched[watchedIndex]?.userRating}
-          setRating={setRating}
+          rating={rating || watched[watchedIndex.current]?.userRating}
+          setRating={handelRatingChange}
           fstColor="#F11A7B"
           secColor="#F11A7B"
           size={24}
@@ -232,21 +215,30 @@ const SelectedMovieSection = ({
           messages={["Razzie", "Bad", "OK", "Good", "Oscar"]}
           key={movie.imdbID}
         />
-        {watchedIndex >= 0 && (
+        {watchedIndex.current >= 0 && (
           <>
             <p>
-              {`You already rated this movie with ${watched[watchedIndex].userRating} 🌟 `}
+              {`You already rated this movie with ${
+                watched[watchedIndex.current].userRating
+              } 🌟 `}
             </p>
             <button
               className="btn-add"
-              onClick={() => onChangeRating(movie, rating)}
+              onClick={() =>
+                onChangeRating(movie, rating, ratingDescisionCount.current)
+              }
             >
               Change rating
             </button>
           </>
         )}
-        {watchedIndex < 0 && (
-          <button className="btn-add" onClick={() => onAddList(movie, rating)}>
+        {watchedIndex.current < 0 && (
+          <button
+            className="btn-add"
+            onClick={() =>
+              onAddList(movie, rating || 3, ratingDescisionCount.current)
+            }
+          >
             + Add to list
           </button>
         )}

@@ -7,32 +7,40 @@ import {
   WatchedSummary,
   MovieDetails,
 } from "./Box";
-import { fetchMovies } from "./Helper";
+import { useMovies } from "./useMovies";
+import { useLocalStorageState } from "./useLocalStorageState";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState([]);
   const [selectedId, setSelectedId] = useState();
-  const [selectedMovie, setSelectedMovie] = useState();
-  const [watched, setWatched] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState();
 
-  const handleSelectedMovie = (id) => {
+  const [watched, setWatched] = useLocalStorageState([], "watched");
+  const { movies, isLoading, error } = useMovies(query);
+
+  function handleSelectedMovie(id) {
     setSelectedId(() => id);
-  };
+  }
 
-  const handleAddWatched = (movie, rating) => {
+  function handleAddWatched(movie, rating, decisionCount) {
     const runtime = parseInt(movie.Runtime);
-    const newMovie = { ...movie, runtime: runtime, userRating: rating };
+    const newMovie = {
+      ...movie,
+      runtime: runtime,
+      userRating: rating,
+      ratingDecisionCount: decisionCount,
+    };
     setWatched(() => [...watched, newMovie]);
     setSelectedId(() => null);
-  };
+  }
 
-  const handleChangeRatingWatched = (movie, rating) => {
+  function handleChangeRatingWatched(movie, rating, decisionCount) {
     const changedMovies = watched.map((movie) => {
       if (movie.imdbID === selectedId) {
-        return { ...movie, userRating: rating };
+        return {
+          ...movie,
+          userRating: rating,
+          ratingDecisionCount: decisionCount,
+        };
       } else {
         return movie;
       }
@@ -40,39 +48,17 @@ export default function App() {
 
     setWatched(() => changedMovies);
     setSelectedId(() => null);
-  };
+  }
 
-  const handleDeleteWatched = (id) => {
+  function handleDeleteWatched(id) {
     const newWatched = watched.filter((movie) => movie.imdbID !== id);
     setWatched(() => newWatched);
     setSelectedId(() => null);
-  };
+  }
 
-  const handleSearchChange = (e) => {
-    setQuery(() => e.target.value);
-  };
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function fetchData() {
-      try {
-        setMovies(() => []);
-        setIsLoading(() => true);
-        setError(() => null);
-        const fetchedMovies = await fetchMovies(query, controller);
-        setMovies(() => fetchedMovies);
-      } catch (err) {
-        setError(() => err.message);
-      } finally {
-        setIsLoading(() => false);
-      }
-    }
-    setSelectedId(() => null);
-    fetchData(); //await fetchMovies(searchValue);
-    return function () {
-      controller.abort();
-    };
-  }, [query]);
+  function handleSearchChange(value) {
+    setQuery(() => value);
+  }
 
   return (
     <>

@@ -1,4 +1,5 @@
-import { React, useState } from "react";
+import { React, useEffect, useRef } from "react";
+import { useKey } from "./useKey";
 
 export const NavBar = ({ children }) => {
   return (
@@ -10,6 +11,19 @@ export const NavBar = ({ children }) => {
 };
 
 export const SearchBar = ({ query, onChangeQuery }) => {
+  const inputEl = useRef(null);
+
+  useKey("Enter", () => {
+    if (document.activeElement === inputEl.current) return;
+    inputEl.current.focus();
+    onChangeQuery("");
+  });
+
+  useEffect(() => {
+    console.log("SearchBar mounted");
+    inputEl.current.focus();
+  }, []);
+
   return (
     <input
       className="search"
@@ -17,7 +31,8 @@ export const SearchBar = ({ query, onChangeQuery }) => {
       name="search"
       placeholder="Search movies..."
       value={query}
-      onChange={(e) => onChangeQuery(e)}
+      onChange={(e) => onChangeQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 };
